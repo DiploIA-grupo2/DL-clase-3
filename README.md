@@ -11,7 +11,7 @@ a partir de lo entregado en `Diplomatura_IA_DL/Clase_3/`:
 **Fecha de la revisión:** 16/11/2026 · **Estado:** 41 hallazgos documentados, 4 de severidad alta,
 todos corregidos en copias nuevas.
 
-> Este proyecto **no está en ningún repositorio** (por pedido explícito). Vive como carpeta local.
+> **Repositorio:** <https://github.com/DiploIA-grupo2/DL-clase-3> (privado, rama `main`).
 > El repo `Diplomatura_IA_DL` no fue modificado.
 
 ---
@@ -90,6 +90,19 @@ Cada ítem tiene su tabla con **celda, tipo, severidad, evidencia y corrección*
    contra `originales/` celda por celda.
 
 Los notebooks están **sin salidas** a propósito: el valor está en verlas aparecer en clase.
+
+---
+
+## Cómo dar acceso al docente
+
+`tarea.md` pide que un integrante agregue a **Kalima83** como revisor del repo. Con GitHub CLI:
+
+```bash
+gh api -X PUT repos/DiploIA-grupo2/DL-clase-3/collaborators/Kalima83 -f permission=push
+```
+
+O desde la web: **Settings → Collaborators → Add people → `Kalima83`** (permiso *Write*), y aceptar
+la invitación que llega por mail.
 
 ---
 

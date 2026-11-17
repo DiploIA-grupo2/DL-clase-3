@@ -132,7 +132,8 @@ Convenciones de la copia corregida:
 - Todos los cambios están comentados en el código con `# [CORREGIDO]` y, cuando aplica, el motivo.
 - Al inicio de cada notebook hay un bloque con la fecha de corrección y un espacio para **grupo e integrantes** (lo que pide `tarea.md`).
 - Se mantuvo el estilo, el idioma y la estructura de celdas del original: no se reescribieron secciones sanas.
-- Los notebooks no se subieron a ningún repositorio (pedido explícito). Las salidas de ejecución están vacías, como corresponde a un material para correr en clase.
+- Las salidas de ejecución están vacías, como corresponde a un material para correr en clase.
+- El contenido se publicó en el repositorio privado `DiploIA-grupo2/DL-clase-3`, rama `main`.
 
 ---
 
