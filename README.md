@@ -9,7 +9,7 @@ a partir de lo entregado en `Diplomatura_IA_DL/Clase_3/`:
 - los 7 videos de la clase (3 obligatorios + 4 de apoyo)
 
 **Fecha de la revisión:** 16/11/2026 · **Actualizado:** 18/11/2026 (fixes de ejecución en Colab)
-**Estado:** 43 hallazgos documentados, 5 de severidad alta, todos corregidos en copias nuevas.
+**Estado:** 44 hallazgos documentados, 5 de severidad alta, todos corregidos en copias nuevas.
 
 > **Repositorio:** <https://github.com/DiploIA-grupo2/DL-clase-3> (privado, rama `main`).
 > El repo `Diplomatura_IA_DL` no fue modificado.
@@ -72,7 +72,7 @@ Clase_3_revision/
 | MNIST canvas | 14 | El panel del canvas se armaba con un `HTML` de IPython dentro de un `VBox` (TraitError en Colab) y el `<script>` no se ejecutaba; además, predicciones sobre píxeles 0-255 en el experimento de rotación |
 | LLM | 6 | `max_length` contaba el prompt; `transformers` sin versión fija; GPU nunca usada |
 | YOLOv5 | 7 | `--half` en runtime sin GPU rompe la validación |
-| YOLOv8 clasificación | 9 | Pin `ultralytics==8.2.103` (oct-2024) incompatible con Colab actual; celdas que dependían del orden de ejecución (`NameError: YOLO/HOME`) |
+| YOLOv8 clasificación | 10 | Pin `ultralytics==8.2.103` (oct-2024) incompatible con Colab actual; celdas que dependían del orden de ejecución (`NameError: YOLO/HOME`) y ruta fija de la imagen anotada |
 | Deck y tarea | 7 | "9 millones de parámetros" para `yolov8n` (son 3,2 M); demo de Ollama sin material reproducible |
 
 Cada ítem tiene su tabla con **celda, tipo, severidad, evidencia y corrección** en

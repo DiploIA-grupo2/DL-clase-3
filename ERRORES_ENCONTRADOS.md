@@ -17,9 +17,9 @@ los 4 notebooks de `Diplomatura_IA_DL/Clase_3/Colab_clase_3/`, el deck `Clase_3.
 | `notebook_clase3_mnist_canvas_2` | 14 | 3 | 4 | 7 |
 | `notebook_clase3_LLM` | 6 | 0 | 3 | 3 |
 | `notebook_clase3_YOLOv5_Clasificacion` | 7 | 1 | 4 | 2 |
-| `notebook_clase3_train_yolov8_...custom_dataset_` | 9 | 1 | 4 | 4 |
+| `notebook_clase3_train_yolov8_...custom_dataset_` | 10 | 1 | 4 | 5 |
 | Material de clase (PDF) y `tarea.md` | 7 | 0 | 3 | 4 |
-| **Total** | **43** | **5** | **18** | **20** |
+| **Total** | **44** | **5** | **19** | **20** |
 
 **Los 5 hallazgos de severidad alta:**
 
@@ -104,6 +104,7 @@ los 4 notebooks de `Diplomatura_IA_DL/Clase_3/Colab_clase_3/`, el deck `Clase_3.
 | V8-07 | 16 | SDK | Baja | `model.predict(...)` devuelve un tensor de probabilidades y el notebook no muestra cómo pasar de índice a **nombre de clase**, que es la limitación que el propio descargo mencionaba. | `model.names[probs.top1]` + confianza con `top1conf`. |
 | V8-08 | 2 | Entorno | Baja | `!nvidia-smi` falla en un runtime de CPU y parece un error del notebook. | Comentario: si falla, no hay GPU (cómo cambiarla). |
 | V8-09 | 13, 14, 16 + nuevas | **Robustez de ejecución** | Media | Las celdas de inferencia usan `YOLO` (importado en otra celda) y `HOME` (definido en otra). Al ejecutar una celda suelta —o después de que Colab reinicia el runtime— aparecen en cadena `NameError: name 'YOLO' is not defined`, `ModuleNotFoundError: No module named 'ultralytics'` y `NameError: name 'HOME' is not defined`. *Reportado al ejecutar en Colab (17-18/11/2026).* | Celda nueva **🔧 Entorno** (instala `ultralytics` si falta, importa `YOLO`/`Image`, fija `HOME`); CLI/SDK/vista autocontenidas (`HOME` local, `YOLO('yolov8n-cls.pt')` que descarga solo, `Image` importada en la propia celda, chequeo de `yolo` en el PATH) y errores accionables en vez de `NameError`. |
+| V8-10 | 14 | **Ruta fija** | Media | La vista de la imagen usa una ruta literal `runs/classify/predict/dog.jpeg`. Falla por dos motivos: cada reejecución del CLI crea `predict2`, `predict3`… y Ultralytics guarda la anotada como **`.jpg`** aunque la fuente sea `.jpeg`. Resultado: `FileNotFoundError` justo en la demo. *Reportado en Colab (18/11/2026).* | `glob` sobre `runs/classify/predict*/*.{jpg,jpeg,png}`, ordenado por fecha de modificación: muestra la salida más reciente, sin importar el nombre de la carpeta ni la extensión, y avisa si todavía no se corrió la inferencia. |
 
 ---
 

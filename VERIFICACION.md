@@ -39,7 +39,7 @@ Resultado: **8/8 válidos, 0 errores de sintaxis** en las celdas de código.
 | MNIST canvas | 21 → 21 | 11 | +179 / −70 | OK | OK |
 | LLM | 12 → 14 | 7 + 2 nuevas | +61 / −8 | OK | OK |
 | YOLOv5 | 20 → 20 | 6 | +30 / −8 | OK | OK |
-| YOLOv8 clasificación | 29 → 31 | 10 + 2 nuevas | +117 / −19 | OK | OK |
+| YOLOv8 clasificación | 29 → 31 | 10 + 2 nuevas | +133 / −19 | OK | OK |
 
 Las celdas no listadas quedaron **byte a byte idénticas** al original.
 
@@ -206,3 +206,30 @@ las cuatro celdas modificadas. La API usada (`Probs.top1`, `top1conf`, `top5`, `
 **No verificable acá:** la ejecución real (requiere instalar `ultralytics` + torch y bajar el modelo y
 la imagen). Para probarlo en Colab: runtime nuevo → ejecutar **sólo** la celda 🔧 Entorno → ejecutar
 **sólo** la celda del SDK; debe imprimir la clase y el top-5 sin `NameError`.
+
+---
+
+## 10. Vista de la imagen anotada con búsqueda dinámica (V8-10, 18/11/2026)
+
+Segundo error reportado en Colab: `FileNotFoundError` al mostrar la imagen que genera la inferencia.
+
+Dos causas encadenadas:
+
+1. La ruta era literal (`runs/classify/predict/dog.jpeg`), pero Ultralytics crea **`predict2`,
+   `predict3`…** en cada reejecución del comando.
+2. La imagen se guarda como **`.jpg`** aunque la fuente sea `dog.jpeg`.
+
+La celda ahora busca con `glob` en `runs/classify/predict*/*.{jpg,jpeg,png}`, ordena por fecha de
+modificación y muestra la más reciente; si no hay ninguna, avisa que falta correr la inferencia.
+
+**Probado ejecutando el código real de la celda** (sin el magic `%cd` ni la llamada a `Image`) contra
+estructuras de carpetas simuladas:
+
+| Escenario | Resultado |
+|---|---|
+| `predict/dog.jpeg` | elige `predict/dog.jpeg` |
+| `predict/dog.jpeg` + `predict3/dog.jpg` (más nuevo) | elige `predict3/dog.jpg` |
+| `predict2/banana.png` (otro nombre y extensión) | elige `predict2/banana.png` |
+| sin `runs/` | `FileNotFoundError` con el mensaje accionable |
+
+Salida real de los cuatro casos: coincidieron con lo esperado.

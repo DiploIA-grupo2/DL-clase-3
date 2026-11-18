@@ -97,11 +97,13 @@ add_group_header(nb)
 nb.rep(0, "**Grupo:** `____` · **Integrantes:** `____, ____, ____, ____`",
        """**Grupo:** `____` · **Integrantes:** `____, ____, ____, ____`
 
-> 🔧 **Actualización 18/11/2026 — celdas autocontenidas (V8-09).** Si el runtime se reinicia o
-> ejecutás una celda suelta ya no aparecen `NameError: YOLO`, `NameError: HOME` ni
-> `ModuleNotFoundError: ultralytics`: la celda **🔧 Entorno** (después de `HOME = os.getcwd()`)
-> instala e importa lo necesario, y las celdas de inferencia definen lo que usan. Las celdas de
-> entrenamiento/validación siguen dependiendo del dataset y del modelo entrenado: ésas van en orden.""",
+> 🔧 **Actualización 18/11/2026 — celdas autocontenidas y vista de la imagen (V8-09, V8-10).**
+> Ya no aparecen `NameError: YOLO`, `NameError: HOME` ni `ModuleNotFoundError: ultralytics` al
+> ejecutar una celda suelta: la celda **🔧 Entorno** (después de `HOME = os.getcwd()`) instala e
+> importa lo necesario. La vista de la imagen anotada busca el archivo más reciente en
+> `runs/classify/predict*` (sirve con `predict2`, `predict3`… y con `.jpg`, `.jpeg` o `.png`).
+> Las celdas de entrenamiento/validación siguen dependiendo del dataset y del modelo entrenado: ésas
+> van en orden.""",
        "V8-09: nota de celdas autocontenidas")
 
 nb.rep(0, """## ⚠️ Descargo de responsabilidad
@@ -159,18 +161,32 @@ if shutil.which('yolo') is None:
 
 nb.rep(14, """%cd {HOME}
 Image(filename='runs/classify/predict/dog.jpeg', height=600)""",
-       """import os
+       """import glob
+import os
 from IPython.display import Image   # [CORREGIDO] autocontenida
 
 HOME = globals().get('HOME') or os.getcwd()
 %cd {HOME}
 
-_anotada = 'runs/classify/predict/dog.jpeg'
-if os.path.exists(_anotada):
-    Image(filename=_anotada, height=600)
-else:
-    raise FileNotFoundError('Primero ejecutá la celda de CLI (mode=predict): genera ' + _anotada)""",
-       "V8-09: la vista de la imagen dependía de HOME y de la celda anterior")
+# [CORREGIDO] la ruta no es fija: cada reejecución del CLI crea predict2, predict3...
+# y Ultralytics puede guardar la anotada como .jpg aunque la fuente sea .jpeg.
+_candidatas = sorted(
+    glob.glob('runs/classify/predict*/*.jpg')
+    + glob.glob('runs/classify/predict*/*.jpeg')
+    + glob.glob('runs/classify/predict*/*.png'),
+    key=os.path.getmtime,
+    reverse=True,
+)
+if not _candidatas:
+    raise FileNotFoundError(
+        'No hay imágenes anotadas en runs/classify/predict*/. '
+        'Ejecutá antes la celda de CLI (task=classify mode=predict).'
+    )
+
+_anotada = _candidatas[0]
+print('Mostrando:', _anotada)
+Image(filename=_anotada, height=600)""",
+       "V8-09/V8-10: vista de la imagen con búsqueda dinámica (.jpg/.jpeg y predict2, predict3...)")
 
 nb.rep(16, """model = YOLO(f'{HOME}/yolov8n-cls.pt')
 results = model.predict(source='https://media.roboflow.com/notebooks/examples/dog.jpeg', conf=0.25)""",
