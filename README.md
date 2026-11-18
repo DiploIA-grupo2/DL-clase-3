@@ -8,8 +8,8 @@ a partir de lo entregado en `Diplomatura_IA_DL/Clase_3/`:
 - la consigna `tarea.md`
 - los 7 videos de la clase (3 obligatorios + 4 de apoyo)
 
-**Fecha de la revisión:** 16/11/2026 · **Estado:** 41 hallazgos documentados, 4 de severidad alta,
-todos corregidos en copias nuevas.
+**Fecha de la revisión:** 16/11/2026 · **Actualizado:** 17/11/2026 (fix de ejecución en Colab, MN-14)
+**Estado:** 42 hallazgos documentados, 5 de severidad alta, todos corregidos en copias nuevas.
 
 > **Repositorio:** <https://github.com/DiploIA-grupo2/DL-clase-3> (privado, rama `main`).
 > El repo `Diplomatura_IA_DL` no fue modificado.
@@ -69,7 +69,7 @@ Clase_3_revision/
 
 | Notebook | Hallazgos | Lo más grave |
 |---|---:|---|
-| MNIST canvas | 13 | Predicciones sobre píxeles 0-255 en el experimento de rotación (resultados inválidos) y una instrucción de "guardar el modelo en JSON" que apunta a una celda inexistente |
+| MNIST canvas | 14 | El panel del canvas se armaba con un `HTML` de IPython dentro de un `VBox` (TraitError en Colab) y el `<script>` no se ejecutaba; además, predicciones sobre píxeles 0-255 en el experimento de rotación |
 | LLM | 6 | `max_length` contaba el prompt; `transformers` sin versión fija; GPU nunca usada |
 | YOLOv5 | 7 | `--half` en runtime sin GPU rompe la validación |
 | YOLOv8 clasificación | 8 | Pin `ultralytics==8.2.103` (oct-2024) incompatible con Colab actual |

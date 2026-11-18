@@ -11,6 +11,9 @@ HEADER = """
 > 📘 **Versión corregida — 16/11/2026.** Copia de trabajo con las correcciones documentadas en
 > `ERRORES_ENCONTRADOS.md` (proyecto `Clase_3_revision`). En el código, cada cambio está marcado
 > con `# [CORREGIDO]`. El archivo original no se modificó.
+>
+> 🔧 **Actualización 17/11/2026:** corregido el `TraitError` de Colab al armar el panel del canvas
+> (MN-14) y la ejecución del JavaScript del canvas.
 
 **Grupo:** `____` · **Integrantes:** `____, ____, ____, ____`
 """
@@ -93,6 +96,15 @@ import ipywidgets as widgets
 
 # [CORREGIDO] Image.LANCZOS quedó como alias deprecado en Pillow >= 9.1
 LANCZOS = getattr(Image, 'Resampling', Image).LANCZOS
+
+# [CORREGIDO] si la celda se vuelve a ejecutar, cierra el panel anterior: así no
+# quedan dos canvas con el mismo id en el DOM ni observers duplicados.
+for _w in globals().get('_canvas_previos', []):
+    try:
+        _w.close()
+    except Exception:
+        pass
+_canvas_previos = []
 
 # Widget oculto para recibir la imagen del canvas
 img_input = widgets.Text(value='', layout=widgets.Layout(display='none'))
@@ -244,6 +256,70 @@ nb.rep(20, "| **Arquitectura densa** | Entrada(784) → Dense(128, ReLU) → Dro
        """| **Arquitectura densa** | Entrada(784) → Dense(128, ReLU) → Dropout(0.2) → Dense(64, ReLU) → Dropout(0.1) → Dense(10, Softmax) — 109.386 parámetros |
 | **Preprocesamiento de entrada** | El canvas replica el formato MNIST: recorte del trazo, centrado y escala [0, 1] |""",
        "E2: tabla alineada con el código (dos Dropout) + fila de preproceso")
+
+# --- Celda 16: TraitError en Colab (VBox + IPython.HTML) y ejecución del JS ---
+nb.rep(16, """<button class="bn bp" id="btn-pred" onclick="sendImage()">⚡ Predecir</button>
+        <button class="bn bc" onclick="clearC()">✕ Borrar</button>""",
+       """<button class="bn bp" id="btn-pred">⚡ Predecir</button>
+        <button class="bn bc" id="btn-clear">✕ Borrar</button>""",
+       "MN-14: se quitan los onclick inline (los listeners se enlazan por JS)")
+
+nb.rep(16, "<script>\nconst canvas = document.getElementById('cv');",
+       """\"\"\"
+
+# [CORREGIDO] El JS del canvas va aparte: `widgets.HTML` NO ejecuta <script>
+# (se inserta con innerHTML) y `VBox` sólo acepta widgets, no HTML de IPython.
+canvas_js = r\"\"\"
+function arrancarCanvas(intentos) {
+  // el widget puede tardar un instante en quedar en el DOM
+  if (!document.getElementById('cv')) {
+    if ((intentos = (intentos || 0) + 1) > 50) {
+      console.warn('MNIST: no se encontró #cv; el widget HTML no se renderizó');
+      return;
+    }
+    setTimeout(function () { arrancarCanvas(intentos); }, 100);
+    return;
+  }
+
+const canvas = document.getElementById('cv');""",
+       "MN-14: el <script> embebido no se ejecutaba")
+
+nb.rep(16, """</script>
+\"\"\"
+
+display(widgets.VBox([img_input, HTML(canvas_html), out]))""",
+       """document.getElementById('btn-pred').addEventListener('click', sendImage);
+document.getElementById('btn-clear').addEventListener('click', clearC);
+}
+
+arrancarCanvas();
+\"\"\"
+
+# [CORREGIDO] TraitError en Colab: widgets.VBox sólo acepta widgets; antes se le
+# pasaba un IPython.display.HTML. Ahora se usa widgets.HTML(value=...).
+_panel = widgets.VBox([
+    img_input,                          # input oculto: puente JS -> Python
+    widgets.HTML(value=canvas_html),    # markup + CSS del canvas
+    out,                                # panel de resultados
+])
+_canvas_previos.extend([img_input, out, _panel])   # para cerrarlos si se reejecuta
+display(_panel)
+
+def _inyectar_js(js):
+    \"\"\"Ejecuta JS en el documento: Colab usa eval_js, Jupyter el mime Javascript.\"\"\"
+    codigo = '(function(){\\n' + js + '\\n})()'
+    try:
+        from google.colab import output as _colab_output
+        _colab_output.eval_js(codigo)
+        return
+    except Exception:
+        pass
+    from IPython.display import Javascript
+    display(Javascript(codigo))
+
+
+_inyectar_js(canvas_js)""",
+       "MN-14: VBox con HTML de IPython + JS inyectado por el canal correcto")
 
 nb.save(OUT)
 print("OK ->", OUT)

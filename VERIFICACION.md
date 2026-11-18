@@ -36,7 +36,7 @@ Resultado: **8/8 válidos, 0 errores de sintaxis** en las celdas de código.
 
 | Notebook | Celdas | Celdas tocadas | Líneas + / − | `nbformat` | `ast` |
 |---|---|---|---|---|---|
-| MNIST canvas | 21 → 21 | 11 | +120 / −65 | OK | OK |
+| MNIST canvas | 21 → 21 | 11 | +179 / −70 | OK | OK |
 | LLM | 12 → 14 | 7 + 2 nuevas | +61 / −8 | OK | OK |
 | YOLOv5 | 20 → 20 | 6 | +30 / −8 | OK | OK |
 | YOLOv8 clasificación | 29 → 29 | 9 | +47 / −15 | OK | OK |
@@ -106,7 +106,7 @@ en realidad "el código olvidó normalizar".
 | # | Pendiente | Cómo verificarlo en 5 minutos |
 |---|---|---|
 | 1 | Entrenamiento MNIST real | Colab → runtime CPU → *Run all* → debe dar 97-98 % de test |
-| 2 | Canvas JS → ipywidgets | Dibujar un 3 grande; el panel debe mostrar `3` y la miniatura "lo que ve la red" |
+| 2 | Canvas JS → ipywidgets | Dibujar un 3 grande; deben funcionar el trazo, los botones ⚡ Predecir / ✕ Borrar, el slider y la miniatura "lo que ve la red" |
 | 3 | Rotación corregida | Celda 18: a 0° y 15° debe acertar con confianza alta; a 90° puede fallar (eso sí es el límite real) |
 | 4 | YOLOv5 con `--half` | Con GPU: `CUDA disponible: True`; sin GPU: la línea `HALF` queda vacía y el comando corre en FP32 |
 | 5 | YOLOv8 con dataset de bananas | Requiere `roboflow.login()` (API key) y GPU; 25 épocas a 128 px |
@@ -141,3 +141,34 @@ python3 fix_yolo.py     # YOLOv5 + YOLOv8
 Cada script parte de `originales/`, aplica reemplazos con `assert` de unicidad y falla ruidosamente si
 el material cambió. No dependen de este equipo salvo por las rutas absolutas, que se pueden ajustar en
 las primeras líneas.
+
+---
+
+## 8. Corrección posterior a una ejecución real en Colab (MN-14)
+
+El **17/11/2026** se ejecutó el notebook corregido en Colab y falló al construir el panel del canvas
+con un `TraitError` (y, al corregirlo, con un canvas que se veía pero no respondía).
+
+**Causa 1 — `TraitError`:** `widgets.VBox` es un contenedor de **widgets** y se le estaba pasando
+`IPython.display.HTML`, que es un objeto de salida de IPython, no un widget. Está en el notebook
+original y no se detectó en la primera revisión porque sólo aparece al ejecutar.
+
+**Causa 2 — `<script>` que no corre:** `widgets.HTML` inserta su contenido con `innerHTML`, y el HTML
+insertado así **no ejecuta** etiquetas `<script>`. Resultado: canvas visible pero sin listeners.
+
+Cambios aplicados en la celda 16:
+
+| # | Cambio |
+|---|---|
+| 1 | `widgets.HTML(value=canvas_html)` en lugar de `HTML(canvas_html)` dentro del `VBox`. |
+| 2 | El JS se separa en `canvas_js` y se inyecta por el canal de JavaScript: `google.colab.output.eval_js` en Colab, `IPython.display.Javascript` en Jupyter/Lab. |
+| 3 | `arrancarCanvas()` reintenta cada 100 ms hasta que `#cv` exista en el DOM, antes de enganchar listeners. |
+| 4 | Botones con `addEventListener`; se eliminaron los `onclick` inline del HTML. |
+| 5 | Al reejecutar la celda se cierra el panel anterior (sin ids duplicados ni observers viejos). |
+
+**Verificado acá:** `nbformat.validate()` OK, `ast.parse()` OK, y revisión del JS completo (listeners
+de mouse y touch, slider, preview, botones y puente al widget oculto).
+
+**No verificable acá:** la ejecución en un navegador con kernel (no hay Colab ni GPU en este equipo).
+La corrección se apoya en comportamiento documentado de ipywidgets (`VBox` sólo acepta widgets;
+`HTML` renderiza con `innerHTML`) y en el uso estándar de `eval_js`/`Javascript`.

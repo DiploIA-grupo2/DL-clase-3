@@ -14,19 +14,20 @@ los 4 notebooks de `Diplomatura_IA_DL/Clase_3/Colab_clase_3/`, el deck `Clase_3.
 
 | Notebook | Hallazgos | Altos | Medios | Bajos |
 |---|---:|---:|---:|---:|
-| `notebook_clase3_mnist_canvas_2` | 13 | 2 | 4 | 7 |
+| `notebook_clase3_mnist_canvas_2` | 14 | 3 | 4 | 7 |
 | `notebook_clase3_LLM` | 6 | 0 | 3 | 3 |
 | `notebook_clase3_YOLOv5_Clasificacion` | 7 | 1 | 4 | 2 |
 | `notebook_clase3_train_yolov8_...custom_dataset_` | 8 | 1 | 3 | 4 |
 | Material de clase (PDF) y `tarea.md` | 7 | 0 | 3 | 4 |
-| **Total** | **41** | **4** | **17** | **20** |
+| **Total** | **42** | **5** | **17** | **20** |
 
-**Los 4 hallazgos de severidad alta:**
+**Los 5 hallazgos de severidad alta:**
 
 1. **MN-01** — el experimento de rotación predice sobre píxeles 0-255 en vez de 0-1: los resultados que se muestran son inválidos.
 2. **MN-02** — el notebook pide "guardar el modelo como JSON" y esa celda no existe: el alumno queda bloqueado antes del canvas.
-3. **V5-01** — `--half` en un runtime de Colab sin GPU: la validación falla.
-4. **V8-01** — `ultralytics==8.2.103` fijado contra un Colab actual (numpy 2.x / torch nuevo): instalación con conflictos.
+3. **MN-14** — el panel del canvas pasa un `IPython.display.HTML` a un `widgets.VBox` (TraitError en Colab) y, aunque no fallara, el `<script>` embebido en `widgets.HTML` no se ejecuta.
+4. **V5-01** — `--half` en un runtime de Colab sin GPU: la validación falla.
+5. **V8-01** — `ultralytics==8.2.103` fijado contra un Colab actual (numpy 2.x / torch nuevo): instalación con conflictos.
 
 **Leyenda de severidad**
 
@@ -47,7 +48,7 @@ los 4 notebooks de `Diplomatura_IA_DL/Clase_3/Colab_clase_3/`, el deck `Clase_3.
 | MN-03 | 6 | Doc. | Media | El diagrama de la arquitectura muestra **un** Dropout; el código tiene `Dropout(0.2)` y `Dropout(0.1)`. | Diagrama con los dos Dropout y total de parámetros (109.386) para que cierre con el deck. |
 | MN-04 | 16 | **Bug de robustez** | Media | Preprocesamiento con **doble remuestreo**: redimensiona 248→28 con LANCZOS, aplica el umbral 0.1 sobre esa imagen ya promediada, recorta y vuelve a redimensionar. Un trazo fino puede quedar por debajo del umbral y desaparecer (reproducido: una línea de 1 px se pierde por completo). | Se recorta el trazo a resolución completa, se centra con padding proporcional (~20%) y se reescala **una sola vez** a 28×28, en una función `preparar_imagen()`. Verificado: el dígito queda en un bbox 20×20 centrado, igual que el MNIST canónico. |
 | MN-05 | 16 (JS) | Fragilidad | Media | `document.querySelector('input[type=text]')` toma **el primer input de texto de la página**. En Colab conviven otros widgets/entradas: el puente JS→Python puede escribir en el campo equivocado y la predicción no llega. | `img_input.add_class('canvas-bridge')` y el JS busca `.canvas-bridge input` (con fallback al selector anterior). |
-| MN-06 | 16 (JS) | Fragilidad | Media | Si se reejecuta la celda del canvas, `img_input.observe(...)` acumula handlers: cada trazo dispara 2+ inferencias y el panel se redibuja varias veces. | Guard `_estado_canvas['ultima']`: si la imagen no cambió, no se vuelve a predecir. |
+| MN-06 | 16 (JS) | Fragilidad | Media | Si se reejecuta la celda del canvas, `img_input.observe(...)` acumula handlers: cada trazo dispara 2+ inferencias y el panel se redibuja varias veces. | Guard `_estado_canvas['ultima']` (misma imagen no se reprocesa) + el panel anterior se cierra al reejecutar la celda. |
 | MN-07 | 16 (JS) | Bug menor | Baja | `getPos()` ignora el escalado CSS del canvas: con zoom del navegador o DPI distinto, el trazo aparece desplazado respecto del puntero. | Factor `canvas.width / rect.width` (y lo mismo en Y). |
 | MN-08 | 16 (JS) | UX | Baja | Un clic sin arrastre (o un tap en tablet) no dibuja nada: sólo hay `moveTo` y nunca un `stroke`. | Se dibuja un punto con `ctx.arc(...)` en `mousedown` y `touchstart`. |
 | MN-09 | 16 | API deprecada | Baja | `Image.LANCZOS` es un alias deprecado desde Pillow 9.1 (`Image.Resampling.LANCZOS` es lo recomendado). | `LANCZOS = getattr(Image, 'Resampling', Image).LANCZOS` (compatible con versiones viejas y nuevas). |
@@ -55,6 +56,7 @@ los 4 notebooks de `Diplomatura_IA_DL/Clase_3/Colab_clase_3/`, el deck `Clase_3.
 | MN-11 | 2 | Limpieza | Baja | `import matplotlib.gridspec` sin uso; `warnings.filterwarnings('ignore')` global (oculta warnings reales, incluidos los de deprecación del propio TF); f-string sin placeholder. | Imports limpios, versiones de TensorFlow/Keras impresas, sin filtro global. |
 | MN-12 | 19 | Reproducibilidad | Baja | El ruido gaussiano se genera sin semilla: dos alumnos obtienen curvas distintas y no se puede comparar en grupo. | `np.random.seed(42)`. |
 | MN-13 | 3 | Verificación | Baja | No se valida nada del dataset; si Colab devolviera otra versión o un cache corrupto, se entrena igual y nadie se enteró. | `assert` de formas (60000/10000 × 28 × 28) y de las 10 clases. |
+| MN-14 | 16 | **Bug de ejecución** | **Alta** | `display(widgets.VBox([img_input, HTML(canvas_html), out]))` le pasa un `IPython.display.HTML` a un contenedor de ipywidgets: los `VBox` **sólo aceptan widgets** → `TraitError` y la celda no muestra nada. Y aunque se cambiara por `widgets.HTML`, ese widget inserta su contenido con `innerHTML`: el `<script>` del canvas **no se ejecuta** y el canvas queda inerte (sin listeners, sin botones). *Detectado al ejecutar el notebook en Colab (17/11/2026).* | Panel armado con `widgets.HTML(value=canvas_html)`; el JS se inyecta por el canal de JavaScript (`google.colab.output.eval_js` en Colab, `IPython.display.Javascript` en Jupyter) y espera activamente a que `#cv` esté en el DOM. Botones enlazados con `addEventListener` (sin `onclick` inline). Al reejecutar la celda se cierra el panel anterior: no quedan ids duplicados ni observers viejos. |
 
 ---
 
@@ -122,7 +124,7 @@ los 4 notebooks de `Diplomatura_IA_DL/Clase_3/Colab_clase_3/`, el deck `Clase_3.
 
 | Original | Copia corregida | Cambios |
 |---|---|---|
-| `notebook_clase3_mnist_canvas_2.ipynb` | `..._mnist_canvas_2_CORREGIDO.ipynb` | MN-01 … MN-13 (13 puntos) |
+| `notebook_clase3_mnist_canvas_2.ipynb` | `..._mnist_canvas_2_CORREGIDO.ipynb` | MN-01 … MN-14 (14 puntos) |
 | `notebook_clase3_LLM.ipynb` | `..._LLM_CORREGIDO.ipynb` | LL-01 … LL-06 (6 puntos, +2 celdas nuevas) |
 | `notebook_clase3_YOLOv5_Clasificacion.ipynb` | `..._YOLOv5_Clasificacion_CORREGIDO.ipynb` | V5-01 … V5-07 (7 puntos) |
 | `notebook_clase3_train_yolov8_..._custom_dataset_.ipynb` | `..._custom_dataset_CORREGIDO.ipynb` | V8-01 … V8-08 (8 puntos) |
