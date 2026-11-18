@@ -3,7 +3,7 @@
 Revisión del material de la **Clase 3** de la Diplomatura en IA (UTN, cohorte 2026):
 los 4 notebooks de `Diplomatura_IA_DL/Clase_3/Colab_clase_3/`, el deck `Clase_3.pdf` y `tarea.md`.
 
-- **Fecha de revisión:** 16/11/2026
+- **Fecha de revisión:** 16/11/2026 · **Actualizado:** 18/11/2026 (MN-14 y V8-09: fixes de ejecución en Colab)
 - **Material original:** `Diplomatura_IA_DL/Clase_3/` (no se modificó: hay copia intacta en `originales/`)
 - **Copia corregida:** `colab_corregido/` — cada cambio está marcado en el código con `# [CORREGIDO]`
 - **Cómo se verificó cada cosa:** ver `VERIFICACION.md`
@@ -17,9 +17,9 @@ los 4 notebooks de `Diplomatura_IA_DL/Clase_3/Colab_clase_3/`, el deck `Clase_3.
 | `notebook_clase3_mnist_canvas_2` | 14 | 3 | 4 | 7 |
 | `notebook_clase3_LLM` | 6 | 0 | 3 | 3 |
 | `notebook_clase3_YOLOv5_Clasificacion` | 7 | 1 | 4 | 2 |
-| `notebook_clase3_train_yolov8_...custom_dataset_` | 8 | 1 | 3 | 4 |
+| `notebook_clase3_train_yolov8_...custom_dataset_` | 9 | 1 | 4 | 4 |
 | Material de clase (PDF) y `tarea.md` | 7 | 0 | 3 | 4 |
-| **Total** | **42** | **5** | **17** | **20** |
+| **Total** | **43** | **5** | **18** | **20** |
 
 **Los 5 hallazgos de severidad alta:**
 
@@ -103,6 +103,7 @@ los 4 notebooks de `Diplomatura_IA_DL/Clase_3/Colab_clase_3/`, el deck `Clase_3.
 | V8-06 | 20 | Idempotencia | Baja | `!mv {dataset.location}/valid {dataset.location}/val` falla si se reejecuta (el destino ya existe) y corta el flujo. | Movida a Python idempotente con `shutil.move` y chequeo de existencia. |
 | V8-07 | 16 | SDK | Baja | `model.predict(...)` devuelve un tensor de probabilidades y el notebook no muestra cómo pasar de índice a **nombre de clase**, que es la limitación que el propio descargo mencionaba. | `model.names[probs.top1]` + confianza con `top1conf`. |
 | V8-08 | 2 | Entorno | Baja | `!nvidia-smi` falla en un runtime de CPU y parece un error del notebook. | Comentario: si falla, no hay GPU (cómo cambiarla). |
+| V8-09 | 13, 14, 16 + nuevas | **Robustez de ejecución** | Media | Las celdas de inferencia usan `YOLO` (importado en otra celda) y `HOME` (definido en otra). Al ejecutar una celda suelta —o después de que Colab reinicia el runtime— aparecen en cadena `NameError: name 'YOLO' is not defined`, `ModuleNotFoundError: No module named 'ultralytics'` y `NameError: name 'HOME' is not defined`. *Reportado al ejecutar en Colab (17-18/11/2026).* | Celda nueva **🔧 Entorno** (instala `ultralytics` si falta, importa `YOLO`/`Image`, fija `HOME`); CLI/SDK/vista autocontenidas (`HOME` local, `YOLO('yolov8n-cls.pt')` que descarga solo, `Image` importada en la propia celda, chequeo de `yolo` en el PATH) y errores accionables en vez de `NameError`. |
 
 ---
 
@@ -127,7 +128,7 @@ los 4 notebooks de `Diplomatura_IA_DL/Clase_3/Colab_clase_3/`, el deck `Clase_3.
 | `notebook_clase3_mnist_canvas_2.ipynb` | `..._mnist_canvas_2_CORREGIDO.ipynb` | MN-01 … MN-14 (14 puntos) |
 | `notebook_clase3_LLM.ipynb` | `..._LLM_CORREGIDO.ipynb` | LL-01 … LL-06 (6 puntos, +2 celdas nuevas) |
 | `notebook_clase3_YOLOv5_Clasificacion.ipynb` | `..._YOLOv5_Clasificacion_CORREGIDO.ipynb` | V5-01 … V5-07 (7 puntos) |
-| `notebook_clase3_train_yolov8_..._custom_dataset_.ipynb` | `..._custom_dataset_CORREGIDO.ipynb` | V8-01 … V8-08 (8 puntos) |
+| `notebook_clase3_train_yolov8_..._custom_dataset_.ipynb` | `..._custom_dataset_CORREGIDO.ipynb` | V8-01 … V8-09 (9 puntos, +2 celdas nuevas) |
 
 Convenciones de la copia corregida:
 

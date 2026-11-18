@@ -39,7 +39,7 @@ Resultado: **8/8 válidos, 0 errores de sintaxis** en las celdas de código.
 | MNIST canvas | 21 → 21 | 11 | +179 / −70 | OK | OK |
 | LLM | 12 → 14 | 7 + 2 nuevas | +61 / −8 | OK | OK |
 | YOLOv5 | 20 → 20 | 6 | +30 / −8 | OK | OK |
-| YOLOv8 clasificación | 29 → 29 | 9 | +47 / −15 | OK | OK |
+| YOLOv8 clasificación | 29 → 31 | 10 + 2 nuevas | +117 / −19 | OK | OK |
 
 Las celdas no listadas quedaron **byte a byte idénticas** al original.
 
@@ -172,3 +172,37 @@ de mouse y touch, slider, preview, botones y puente al widget oculto).
 **No verificable acá:** la ejecución en un navegador con kernel (no hay Colab ni GPU en este equipo).
 La corrección se apoya en comportamiento documentado de ipywidgets (`VBox` sólo acepta widgets;
 `HTML` renderiza con `innerHTML`) y en el uso estándar de `eval_js`/`Javascript`.
+
+---
+
+## 9. Celdas autocontenidas en YOLOv8-cls (V8-09, 18/11/2026)
+
+Reportado al ejecutar en Colab: al correr una celda suelta, los errores se encadenaron:
+
+```
+NameError: name 'YOLO' is not defined
+ModuleNotFoundError: No module named 'ultralytics'
+NameError: name 'HOME' is not defined
+```
+
+**Causa:** el notebook asume ejecución secuencial desde el principio. `HOME` se define en la celda 3,
+`YOLO`/`Image` se importan en la 7, y las celdas de inferencia los usan sin volver a declararlos. En
+Colab es normal saltear celdas, y el runtime se reinicia solo tras un tiempo de inactividad.
+
+**Cambios aplicados:**
+
+| # | Celda | Cambio |
+|---|---|---|
+| 1 | nueva (después de `HOME = os.getcwd()`) | **🔧 Entorno**: fija `HOME`, instala `ultralytics` si falta (subprocess con `sys.executable`, equivalente a `%pip`), importa `YOLO`, `display` e `Image`, e informa versiones. |
+| 2 | CLI `mode=predict` | `HOME` local, chequeo de `shutil.which('yolo')` y mensaje accionable si falta el comando. |
+| 3 | vista de la imagen anotada | importa `Image` en la propia celda y avisa (en vez de `FileNotFoundError`) si falta correr la celda de CLI. |
+| 4 | SDK `model.predict` | `YOLO('yolov8n-cls.pt')` sin `HOME` (Ultralytics descarga los pesos si no están) y `ModuleNotFoundError` con la instrucción exacta. |
+| 5 | YOLOv5, validación | se agregó `import torch` en la celda (mismo patrón, por si se ejecuta suelta). |
+
+**Verificado acá:** `nbformat.validate()` OK, `ast.parse()` OK en las 31 celdas, y revisión manual de
+las cuatro celdas modificadas. La API usada (`Probs.top1`, `top1conf`, `top5`, `top5conf`,
+`model.names`) es la documentada por Ultralytics para clasificación.
+
+**No verificable acá:** la ejecución real (requiere instalar `ultralytics` + torch y bajar el modelo y
+la imagen). Para probarlo en Colab: runtime nuevo → ejecutar **sólo** la celda 🔧 Entorno → ejecutar
+**sólo** la celda del SDK; debe imprimir la clase y el top-5 sin `NameError`.

@@ -60,7 +60,9 @@ nb.rep(7, """# Descargar Imagenet val (6.3G, 50000 imágenes)
 
 nb.rep(8, """# Validar YOLOv5s en Imagenet val
 !python classify/val.py --weights yolov5s-cls.pt --data ../datasets/imagenet --img 224 --half""",
-       """# Validar YOLOv5s en ImageNet val (o en Imagenette si no bajaste ImageNet)
+       """import torch   # [CORREGIDO] autocontenida: no depende de la celda de instalación
+
+# Validar YOLOv5s en ImageNet val (o en Imagenette si no bajaste ImageNet)
 DATA_VAL = '../datasets/imagenet'   # alternativa liviana: 'imagenette160'
 
 # [CORREGIDO] --half exige GPU; en un runtime de CPU el comando fallaba
@@ -91,6 +93,16 @@ print("OK yolov5", nb.log)
 # ══════════════════════════════════════════════════════════════════════
 nb = NB(f"{BASE}/originales/notebook_clase3_train_yolov8_clasificacion_custom_dataset_.ipynb", "yolov8")
 add_group_header(nb)
+
+nb.rep(0, "**Grupo:** `____` · **Integrantes:** `____, ____, ____, ____`",
+       """**Grupo:** `____` · **Integrantes:** `____, ____, ____, ____`
+
+> 🔧 **Actualización 18/11/2026 — celdas autocontenidas (V8-09).** Si el runtime se reinicia o
+> ejecutás una celda suelta ya no aparecen `NameError: YOLO`, `NameError: HOME` ni
+> `ModuleNotFoundError: ultralytics`: la celda **🔧 Entorno** (después de `HOME = os.getcwd()`)
+> instala e importa lo necesario, y las celdas de inferencia definen lo que usan. Las celdas de
+> entrenamiento/validación siguen dependiendo del dataset y del modelo entrenado: ésas van en orden.""",
+       "V8-09: nota de celdas autocontenidas")
 
 nb.rep(0, """## ⚠️ Descargo de responsabilidad
 
@@ -131,21 +143,58 @@ nb.rep(5, """# Método de instalación Pip (recomendado)
 %pip install -q -U "ultralytics>=8.3" """.rstrip(),
        "E42: pin 8.2.103 incompatible con numpy 2.x de Colab")
 
-nb.rep(13, """!yolo task=classify mode=predict model=yolov8n-cls.pt conf=0.25 source='https://media.roboflow.com/notebooks/examples/dog.jpeg'""",
-       """# [CORREGIDO] `conf` es un umbral de detección: no aplica a clasificación
+nb.rep(13, """%cd {HOME}
+!yolo task=classify mode=predict model=yolov8n-cls.pt conf=0.25 source='https://media.roboflow.com/notebooks/examples/dog.jpeg'""",
+       """import os, shutil
+
+# [CORREGIDO] autocontenida: no depende de la celda de HOME ni del orden de ejecución
+HOME = globals().get('HOME') or os.getcwd()
+if shutil.which('yolo') is None:
+    raise RuntimeError('El comando `yolo` no está disponible: ejecutá la celda 🔧 Entorno primero.')
+%cd {HOME}
+
+# [CORREGIDO] `conf` es un umbral de detección: no aplica a clasificación
 !yolo task=classify mode=predict model=yolov8n-cls.pt imgsz=224 source='https://media.roboflow.com/notebooks/examples/dog.jpeg'""",
-       "E43: conf no tiene efecto en classify")
+       "E43+V8-09: sin conf, con HOME propio y chequeo del CLI")
+
+nb.rep(14, """%cd {HOME}
+Image(filename='runs/classify/predict/dog.jpeg', height=600)""",
+       """import os
+from IPython.display import Image   # [CORREGIDO] autocontenida
+
+HOME = globals().get('HOME') or os.getcwd()
+%cd {HOME}
+
+_anotada = 'runs/classify/predict/dog.jpeg'
+if os.path.exists(_anotada):
+    Image(filename=_anotada, height=600)
+else:
+    raise FileNotFoundError('Primero ejecutá la celda de CLI (mode=predict): genera ' + _anotada)""",
+       "V8-09: la vista de la imagen dependía de HOME y de la celda anterior")
 
 nb.rep(16, """model = YOLO(f'{HOME}/yolov8n-cls.pt')
 results = model.predict(source='https://media.roboflow.com/notebooks/examples/dog.jpeg', conf=0.25)""",
-       """model = YOLO(f'{HOME}/yolov8n-cls.pt')
+       """import os
+
+try:
+    from ultralytics import YOLO   # [CORREGIDO] autocontenida
+except ModuleNotFoundError as _e:
+    raise ModuleNotFoundError(
+        'Falta ultralytics: ejecutá la celda 🔧 Entorno, o '
+        '%pip install -U "ultralytics>=8.3" y reiniciá el runtime.'
+    ) from _e
+
+# [CORREGIDO] sin HOME ni ruta absoluta: si el .pt no está, Ultralytics lo descarga solo
+model = YOLO('yolov8n-cls.pt')
 results = model.predict(source='https://media.roboflow.com/notebooks/examples/dog.jpeg', imgsz=224)
 
 # [CORREGIDO] el SDK devuelve probabilidades: para obtener el nombre de la clase
 # hay que mapear el índice con model.names (era la limitación del descargo de 2023)
 probs = results[0].probs
-print('Clase predicha:', model.names[probs.top1], f'({float(probs.top1conf):.1%})')""",
-       "E44: se mostraba el tensor crudo sin mapear id -> nombre")
+print('Clase predicha:', model.names[probs.top1], f'({float(probs.top1conf):.1%})')
+print('Top-5:', [(model.names[i], round(float(c), 3))
+                 for i, c in zip(probs.top5, probs.top5conf)])""",
+       "E44+V8-09: SDK autocontenido y con top-5 mapeado a nombres")
 
 nb.rep(18, "Tenga en cuenta elegir el tipo de proyecto correcto. En nuestro caso, Detección de Objetos.",
        "Tenga en cuenta elegir el tipo de proyecto correcto. En nuestro caso, **Clasificación** (no Detección de Objetos).",
@@ -170,6 +219,39 @@ nb.rep(28, """!yolo task=classify mode=predict model={HOME}/runs/classify/train/
        """# [CORREGIDO] sin `conf` (no aplica) y con el imgsz del entrenamiento
 !yolo task=classify mode=predict model={HOME}/runs/classify/train/weights/best.pt imgsz=128 source={dataset.location}/test/overripe""",
        "E47: predicción a 224 px tras entrenar a 128 px")
+
+nb.new_cell("markdown", """### 🔧 Celda de entorno (ejecutala si reiniciaste el runtime)
+
+Con esta celda ya no hace falta correr el notebook de principio a fin para probar una parte:
+deja instalado `ultralytics`, importado `YOLO` y definido `HOME`. Las celdas de entrenamiento,
+validación y predicción con el modelo propio sí necesitan el dataset y el modelo entrenado.""", at=4)
+
+nb.new_cell("code", """# ─── ENTORNO: primero esta celda (y cada vez que reinicies el runtime) ───
+# [CORREGIDO] V8-09: instala ultralytics si falta, importa YOLO y fija HOME.
+# Evita los errores clásicos al ejecutar celdas sueltas:
+#   NameError: name 'YOLO' is not defined
+#   NameError: name 'HOME' is not defined
+#   ModuleNotFoundError: No module named 'ultralytics'
+
+import os, sys
+
+HOME = globals().get('HOME') or os.getcwd()
+print('HOME:', HOME)
+
+try:
+    import ultralytics
+except ModuleNotFoundError:
+    print('ultralytics no está instalado: instalando (equivale a %pip install)...')
+    import subprocess
+    subprocess.check_call(
+        [sys.executable, '-m', 'pip', 'install', '-q', '-U', 'ultralytics>=8.3']
+    )
+    import ultralytics
+
+from ultralytics import YOLO
+from IPython.display import display, Image
+
+print(f'ultralytics {ultralytics.__version__} · YOLO importado · HOME listo')""", at=5)
 
 nb.save(f"{BASE}/colab_corregido/notebook_clase3_train_yolov8_clasificacion_custom_dataset_CORREGIDO.ipynb")
 print("OK yolov8", nb.log)
